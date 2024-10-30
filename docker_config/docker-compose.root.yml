@@ -1,0 +1,67 @@
+version: '3'
+
+networks:
+  laravel:
+
+services:
+  site:
+    build:
+      context: ./dockerfiles
+      dockerfile: nginx.root.dockerfile
+    container_name: nginx-imis
+    ports:
+      - 80:80
+    volumes:
+      - ./src/base-imis:/var/www/html/imis:delegated
+    depends_on:
+      - php
+    networks:
+      - laravel
+
+  php:
+    build:
+      context: ./dockerfiles
+      dockerfile: php.root.dockerfile
+    container_name: php-imis
+    volumes:
+      - ./src/base-imis:/var/www/html/imis:delegated
+    networks:
+      - laravel
+
+  composer:
+    image: composer:2
+    container_name: composer-imis
+    volumes:
+      - ./src/base-imis:/var/www/html/imis
+    working_dir: /var/www/html/imis
+    depends_on:
+      - php
+    user: root
+    entrypoint: ['composer']
+    networks:
+      - laravel
+
+  npm:
+    image: node:13.7
+    container_name: npm-imis
+    volumes:
+      - ./src/base-imis:/var/www/html/imis
+    ports:
+      - 3000:3000
+      - 3001:3001
+    working_dir: /var/www/html/imis
+    entrypoint: ['npm']
+    networks:
+      - laravel
+
+  artisan:
+    build:
+      context: ./dockerfiles
+      dockerfile: php.root.dockerfile
+    container_name: artisan-imis
+    volumes:
+      - ./src/base-imis:/var/www/html/imis:delegated
+    working_dir: /var/www/html/imis
+    entrypoint: ['php', '/var/www/html/artisan']
+    networks:
+      - laravel
